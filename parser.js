@@ -11,7 +11,28 @@ function getAstLocationSpan(ast) {
 
 function astFunctionFinder(ast) {
 	if(ast.type == "FunctionDeclaration") {
-		return [{type: "function", name: ast.id.name, locationSpan: getAstLocationSpan(ast), span: [ast.start, ast.end]}]
+		return [{
+			type: "function", 
+			name: ast.id.name, 
+			locationSpan: getAstLocationSpan(ast), 
+			span: [ast.start, ast.end]
+		}];
+	} else if(ast.type == "ClassMethod") {
+		return [{
+			type: "method", 
+			name: ast.key.name, 
+			locationSpan: getAstLocationSpan(ast), 
+			span: [ast.start, ast.end]
+		}];
+	} else if(ast.type == "ClassDeclaration") {
+		return [{
+			type: "class", 
+			name: ast.id.name, 
+			locationSpan: getAstLocationSpan(ast), 
+			headerSpan: [ast.start, ast.body.start],
+			footerSpan: [ast.end, ast.end],
+			children: astFunctionFinder(ast.body)
+		}];
 	}
 	if(ast.body) {
 		if(Array.isArray(ast.body)) {
@@ -37,6 +58,7 @@ function astFileToDeclarationTree(ast) {
 function processFile(fileIn, fileOut, callback) {
 	fs.readFile(fileIn, (err, buffer) => {
 		if(err) return callback(err);
+
 		let ast = babylon.parse(buffer.toString());
 
 		let declarationTree = astFileToDeclarationTree(ast);
